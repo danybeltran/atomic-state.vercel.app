@@ -1,0 +1,29 @@
+# Filters
+
+Filters are a way to create reactive derived states:
+
+```jsx
+import { atom, filter, useAtom, useFilter } from 'atomic-state'
+
+const todosState = atom({
+  name: 'todos',
+  default: []
+})
+
+const completedTodosState = filter({
+  name: 'completedTodos',
+  get({ get }) {
+    // This filter will only subscribe to updates from 'todosState'
+    const todos = get(todosState)
+
+    return todos.filter((todo) => todo.completed)
+  }
+})
+
+function Completed() {
+  // Type is inferred
+  const completedTodos = useFilter(completedTodosState)
+
+  return <p>Completed todos: {todos.length}</p>
+}
+```

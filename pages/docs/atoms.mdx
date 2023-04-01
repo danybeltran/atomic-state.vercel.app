@@ -1,0 +1,204 @@
+import { Callout } from 'nextra-theme-docs'
+
+# Atoms
+
+Atoms are pieces of state that can be read and written to from any component or hook. In the most basic way, they can be used the same way you would use `useState`:
+
+```jsx
+import { AtomicState, atom, useAtom, useValue } from 'atomic-state'
+
+// The store
+const textState = atom({
+  name: 'text',
+  default: ''
+})
+
+export default function App() {
+  const [text, setText] = useAtom(textState)
+
+  // Reading from and writing to that store
+  return (
+    <div>
+      <h2>Text: {text}</h2>
+      <input
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value)
+        }}
+      />
+    </div>
+  )
+}
+```
+
+Let's create a todo app!
+
+## Todo App
+
+For our app to be complete, we need the following:
+
+- Add todos
+- Toggle a todo's `completed` state
+- Remove todos
+- Get the list of completed todos
+
+First, create an atom that will store the todos:
+
+```jsx filename="states/index.js"
+import { atom } from 'atomic-state'
+
+export const todosState = atom({
+  name: 'todos',
+  default: []
+})
+```
+
+Create a component that adds new todos to the list:
+
+```jsx filename="components/TodoForm.jsx"
+import { useState } from 'react'
+import { useAtom } from 'atomic-state'
+
+import { todosState } from '@/states'
+
+export default function TodoForm() {
+  // Consumig the todosState
+  const [todos, setTodos] = useAtom(todosState)
+
+  const [newTodo, setNewTodo] = useState('')
+
+  return (
+    <div>
+      <input value={newTodo} onChange={(e) => setNewTodo(e.target.value)} />
+      <button
+        onClick={() => {
+          setTodos((previousTodos) => [
+            {
+              title: newTodo,
+              completed: false,
+              id: crypto.randomUUID()
+            },
+            ...previousTodos
+          ])
+        }}
+      >
+        Save
+      </button>
+    </div>
+  )
+}
+```
+
+Create a component to show the todos:
+
+```jsx filename="components/Todos.jsx"
+import { useValue } from 'atomic-state'
+
+import { todosState } from '@/states'
+
+export default function Todos() {
+  const todos = useValue(todosState)
+
+  return (
+    <section>
+      {todos.map((todo) => (
+        <div key={'show-' + todo.id}>
+          <h2>{todo.title}</h2>
+          <p>{todo.completed ? 'Completed' : 'Incomplete'}</p>
+        </div>
+      ))}
+    </section>
+  )
+}
+```
+
+Render both components:
+
+```jsx filename="src/App.jsx"
+import { AtomicState } from 'atomic-state'
+
+import TodoForm from '@/components/TodoForm'
+import Todos from '@/components/Todos'
+
+export default function App() {
+  return (
+    <main>
+      <AtomicState>
+        <TodoForm />
+        <Todos />
+      </AtomicState>
+    </main>
+  )
+}
+```
+
+So far it works, but there should be a way to remove todos or toggle the `completed` state. Add this action to the `todosState` atom:
+
+```jsx filename="states/index.js" {7-30}
+import { atom } from 'atomic-state'
+
+export const todosState = atom({
+  name: 'todos',
+  default: [],
+  actions: {
+    modify({ args, dispatch }) {
+      const { id, type } = args
+
+      switch (type) {
+        case 'remove':
+          return dispatch((todos) => todos.filter((todo) => todo.id !== id))
+        case 'toggle':
+          return dispatch((todos) =>
+            todos.map((todo) => {
+              if (todo.id === id) {
+                return {
+                  ...todo,
+                  completed: !todo.completed
+                }
+              }
+              return todo
+            })
+          )
+        default:
+          // This will not modify the state
+          return
+      }
+    }
+  }
+})
+```
+
+And use it in the `Todos` component:
+
+```jsx filename="components/Todos.jsx"
+import { useAtom } from 'atomic-state'
+
+import { todosState } from '@/states'
+
+export default function Todos() {
+  const [todos, setTodos, todosActions] = useAtom(todosState)
+
+  return (
+    <section>
+      {todos.map((todo) => (
+        <div key={'show-' + todo.id}>
+          <h2>{todo.title}</h2>
+          <p>{todo.completed ? 'Completed' : 'Incomplete'}</p>
+          <div>
+            <button
+              onClick={() => {
+                const willRemoveTodo = confirm('Delete this todo?')
+                if (willRemoveTodo) {
+                  todosActions.removeTodo(todo)
+                }
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+    </section>
+  )
+}
+```

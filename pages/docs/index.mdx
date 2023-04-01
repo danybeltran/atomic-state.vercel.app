@@ -1,0 +1,52 @@
+import { Callout } from 'nextra-theme-docs'
+
+# Getting started
+
+### Installation
+
+Using yarn
+
+```bash copy
+yarn add atomic-state
+```
+
+Or with npm
+
+```bash copy
+npm install --save atomic-state
+```
+
+### Quick start
+
+**Basic example**: Counter app
+
+```jsx
+import { atom, useAtom } from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: 0
+})
+
+function Counter() {
+  const [count, setCount] = useAtom(countState)
+
+  return (
+    <div>
+      <h2>Count: {count}</h2>
+      <button onClick={() => setCount((c) => c + 1)}>Increase</button>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    // The AtomicState root
+    <AtomicState>
+      <Counter />
+    </AtomicState>
+  )
+}
+```
+
+In this example, an `atom` is created to be used as a store. Any writes to it will trigger a re-render in other subscribers.
