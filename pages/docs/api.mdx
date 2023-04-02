@@ -37,6 +37,12 @@ const countState = atom({
 })
 ```
 
+<Callout type='info'>
+  Checkout this [React Native starter
+  template](https://github.com/atomic-state/reactnative-starter) that uses `atomic-state`
+  [`expo-secure-store`](https://docs.expo.dev/versions/latest/sdk/securestore/) as persistence provider
+</Callout>
+
 - **`actions`**: An object containing the state's reducers. Internally, they have access to the latest state value and function to update it. They can also read other atoms' and filters' states:
 
 ```jsx
