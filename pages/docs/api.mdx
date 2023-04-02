@@ -1,1 +1,378 @@
+import { Callout } from 'nextra-theme-docs'
+
 # API
+
+## atom
+
+- **`name`**: The name of the store. This should be unique.
+
+- **`default`**: The default value of the store.
+
+- **`persist`**: A boolean. If `true`, any writes to this atom will be saved in the `persistenceProvider` passed.
+
+- **`persistenceProvider`**: The persistence mechanism to save atom's values. This should have the following shape:
+
+```ts
+type PersistenceStoreType = {
+  getItem: (key: string) => any
+  setItem: (key: string, value: any) => void
+  removeItem: (key: string) => void
+}
+```
+
+Persistence providers supported by default: `localStorage` (default), `sessionStorage`, `AsyncStorage` (React Native).
+
+Example with `AsyncStorage`:
+
+```jsx {3,9}
+import { atom } from 'atomic-state'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const countState = atom({
+  name: 'count',
+  default: 0,
+  persist: true,
+  persistenceProvider: AsyncStorage
+})
+```
+
+<Callout type='info'>
+  Checkout this [React Native starter
+  template](https://github.com/atomic-state/reactnative-starter) that uses `atomic-state`
+  [`expo-secure-store`](https://docs.expo.dev/versions/latest/sdk/securestore/) as persistence provider
+</Callout>
+
+- **`actions`**: An object containing the state's reducers. Internally, they have access to the latest state value and function to update it. They can also read other atoms' and filters' states:
+
+```jsx
+import { atom, useValue, useActions } from 'atomic-state'
+
+const textState = atom({
+  name: 'text'
+})
+
+const countState = atom({
+  name: 'count',
+  default: 0,
+  actions: {
+    change({ args, state, dispatch, get }) {
+      // The latest textState value
+      const text = get(textState)
+
+      switch (args.type) {
+        case '+':
+          dispatch(state + 1)
+          break
+        case '-':
+          dispatch(state - 1)
+          break
+      }
+    }
+  }
+})
+
+export default function App() {
+  const count = useValue(countState)
+
+  // The useActions hook returns only the actions of the atom
+  const actions = useActions(countState)
+
+  return (
+    <div>
+      <p>{count}</p>
+      <section>
+        <button onClick={() => actions.change({ type: '+' })}>++</button>
+        <button onClick={() => actions.change({ type: '-' })}>--</button>
+      </section>
+    </div>
+  )
+}
+```
+
+<Callout type='info'>
+  You only need to pass one argument to an action. This will be the `args`
+  property in your reducer
+</Callout>
+
+- **`effects`**: Side effects that run once for every update. They can be used to sync state with external providers, or even prevent state updates without re-renders:
+
+In this example, updates are commited **only** when the new value is lower than 9:
+
+```jsx
+import { atom } from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: [],
+  effects: [
+    ({ state, previous }) => {
+      return state < 9
+    }
+  ]
+})
+```
+
+<Callout type='info'>
+  If any effect returns `false`, the state update will be prevented. This will
+  also prevent any re-renders that would have happened as the result of a state
+  update.
+</Callout>
+
+Effects can also return cleanup functions:
+
+```jsx
+import { atom } from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: [],
+  effects: [
+    ({ state, previous }) => {
+      console.log('Subscribing')
+      return () => {
+        console.log('Unsubscribing')
+      }
+    }
+  ]
+})
+```
+
+State updates can also be prevented in effects that use `async`, using the `cancel` function:
+
+```jsx
+import { atom } from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: [],
+  effects: [
+    async ({ state, cancel }) => {
+      if (state > 9) cancel()
+    }
+  ]
+})
+```
+
+You can also set state from effects using the `dispatch` function:
+
+```jsx
+import { atom } from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: [],
+  effects: [
+    ({ state, dispatch }) => {
+      if (state > 9) {
+        dispatch(0)
+        return false
+      }
+    }
+  ]
+})
+```
+
+<Callout>Be careful! Using `dispatch` wrong can create an infinte loop</Callout>
+
+## filter
+
+Filters provide a way to create derived states.
+
+- `name`: The name of the filter. This should be unique
+- `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default value with asynchronus code, like a network request.
+
+```jsx
+import { atom, filter } from 'atomic-state'
+
+const textState = atom({
+  name: 'textState',
+  default: ''
+})
+
+const resultsState = filter({
+  name: 'results',
+  default: [],
+  get({ get }) {
+    const text = get(textState)
+
+    return fetch('/search?q=' + text).then((res) => res.json())
+  }
+})
+```
+
+## Snapshots
+
+You can take snapshots that include information about all the atoms and filters:
+
+```jsx {6}
+import {
+  atom,
+  filter,
+  useAtom,
+  useFilter,
+  takeSnapshot,
+  AtomicState
+} from 'atomic-state'
+
+const countState = atom({
+  name: 'count',
+  default: 0
+})
+
+const doubleState = filter({
+  name: 'double',
+  get({ get }) {
+    const count = get(countState)
+    return count * 2
+  }
+})
+
+function Counter() {
+  const [count, setCount] = useAtom(countState)
+
+  return <button onClick={() => setCount((c) => c + 1)}>{count}</button>
+}
+
+function Double() {
+  const double = useFilter(doubleState)
+  return <p></p>
+}
+
+export default function App() {
+  return (
+    <main>
+      <button
+        onClick={() => {
+          console.log(takeSnapshot())
+        }}
+      >
+        Take snapshot
+      </button>
+      <AtomicState>
+        <Counter />
+        <Double />
+      </AtomicState>
+      <AtomicState prefix='another-provider'>
+        <Counter />
+        <Double />
+      </AtomicState>
+    </main>
+  )
+}
+```
+
+If you click the `Take snapshot` button, you will see something like this (considering `count` has not changed):
+
+```jsx
+{
+    "store": {
+        "filters": {
+            "double": 0
+        },
+        "atoms": {
+            "count": 0
+        }
+    },
+    "another-provider": {
+        "filters": {
+            "double": 0
+        },
+        "atoms": {
+            "count": 0
+        }
+    }
+}
+```
+
+You may notice that a `prefix` prop was added to `AtomicState`. This creates two different state providers that are independent from each other. It is possible to have different providers:
+
+```jsx
+export default function App() {
+  return (
+    <main>
+      <button
+        onClick={() => {
+          console.log(takeSnapshot())
+        }}
+      ></button>
+      <AtomicState>
+        <Counter />
+        <AtomicState prefix='another-provider'>
+          <Double />
+        </AtomicState>
+      </AtomicState>
+      <AtomicState prefix='another-provider'>
+        <Counter />
+        <Double />
+      </AtomicState>
+    </main>
+  )
+}
+```
+
+If you want to take a snapshot of only one provider, pass the `prefix` as the first argument:
+
+```jsx
+takeSnapshot('store') // 'store' is the default provider's name
+```
+
+For the example above, it would be:
+
+```jsx
+takeSnapshot('another-provider')
+```
+
+And you should see something like this:
+
+```jsx
+{
+    "filters": {
+        "double": 0
+    },
+    "atoms": {
+        "count": 0
+    }
+}
+
+```
+
+# AtomicState
+
+The Atomic State root component.
+
+- `atoms`: The default values for atoms. This is very useful with SSR:
+
+```jsx
+import { AtomicState } from 'atomic-state'
+
+export default function App({ children }) {
+  return (
+    <main>
+      <AtomicState
+        atoms={{
+          count: 0
+        }}
+      >
+        {children}
+      </AtomicState>
+    </main>
+  )
+}
+```
+
+- `persistenceProvider`: The persistence mechanism. This will only replace the default global persistence mechanism (`localStorage`), not the per-atom `persistenceProvider`:
+
+```jsx
+import { AtomicState } from 'atomic-state'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+export default function App({ children }) {
+  return (
+    <main>
+      <AtomicState persistenceProvider={AsyncStorage}>{children}</AtomicState>
+    </main>
+  )
+}
+```
