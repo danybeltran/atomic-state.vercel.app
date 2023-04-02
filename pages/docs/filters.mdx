@@ -1,6 +1,8 @@
+import { Callout } from 'nextra-theme-docs'
+
 # Filters
 
-Filters are a way to create reactive derived states:
+Filters provide a way to create derived states:
 
 ```jsx
 import { atom, filter, useAtom, useFilter } from 'atomic-state'
@@ -26,4 +28,54 @@ function Completed() {
 
   return <p>Completed todos: {todos.length}</p>
 }
+```
+
+They can also return promises:
+
+```jsx filename="states/filters.jsx"
+import { atom, filter } from 'atomic-state'
+
+const textState = atom({
+  name: 'text',
+  default: ''
+})
+
+const searchResultsState = filter({
+  name: 'searchResults',
+  default: [],
+  async get({ get }) {
+    const text = get(textState)
+
+    return fetch('/search?q=' + text).then((res) => res.json())
+  }
+})
+```
+
+<Callout>
+  Note that in this case the result is not immediate so a `default` property is
+  required. The return type will be inferred from it as well.
+</Callout>
+
+Or they can read other filters:
+
+```jsx
+import { filter } from 'atomic-state'
+
+import { searchResultsState } from '@/states/filters'
+
+const infoState = filter({
+  name: 'info',
+  default: {
+    name: '',
+    searchResults: []
+  },
+  async get({ read }) {
+    const searchResults = await read(searchResultsState)
+
+    return {
+      name: '',
+      searchResults
+    }
+  }
+})
 ```

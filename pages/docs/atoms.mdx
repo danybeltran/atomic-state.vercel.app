@@ -5,7 +5,7 @@ import { Callout } from 'nextra-theme-docs'
 Atoms are pieces of state that can be read and written to from any component or hook. In the most basic way, they can be used the same way you would use `useState`:
 
 ```jsx
-import { AtomicState, atom, useAtom, useValue } from 'atomic-state'
+import { atom, useAtom } from 'atomic-state'
 
 // The store
 const textState = atom({
@@ -62,7 +62,7 @@ import { useAtom } from 'atomic-state'
 import { todosState } from '@/states'
 
 export default function TodoForm() {
-  // Consumig the todosState
+  // Using todosState
   const [todos, setTodos] = useAtom(todosState)
 
   const [newTodo, setNewTodo] = useState('')
@@ -91,7 +91,7 @@ export default function TodoForm() {
 
 Create a component to show the todos:
 
-```jsx filename="components/Todos.jsx"
+```jsx filename="components/Todos.jsx" {1, 6}
 import { useValue } from 'atomic-state'
 
 import { todosState } from '@/states'
@@ -111,6 +111,10 @@ export default function Todos() {
   )
 }
 ```
+
+<Callout type='info'>
+  The `useValue` hook returns only the value of the state
+</Callout>
 
 Render both components:
 
@@ -134,43 +138,44 @@ export default function App() {
 
 So far it works, but there should be a way to remove todos or toggle the `completed` state. Add this action to the `todosState` atom:
 
-```jsx filename="states/index.js" {7-30}
+```jsx
+function modifyReducer({ args, dispatch }) {
+  const { id, type } = args
+  switch (type) {
+    case 'REMOVE':
+      dispatch((todos) => todos.filter((todo) => todo.id !== id))
+      break
+    case 'TOGGLE':
+      dispatch((todos) =>
+        todos.map((todo) => {
+          if (todo.id === id) {
+            return {
+              ...todo,
+              completed: !todo.completed
+            }
+          }
+          return todo
+        })
+      )
+      break
+  }
+}
+```
+
+```jsx filename="states/index.js" {7}
 import { atom } from 'atomic-state'
 
 export const todosState = atom({
   name: 'todos',
   default: [],
   actions: {
-    modify({ args, dispatch }) {
-      const { id, type } = args
-
-      switch (type) {
-        case 'remove':
-          return dispatch((todos) => todos.filter((todo) => todo.id !== id))
-        case 'toggle':
-          return dispatch((todos) =>
-            todos.map((todo) => {
-              if (todo.id === id) {
-                return {
-                  ...todo,
-                  completed: !todo.completed
-                }
-              }
-              return todo
-            })
-          )
-        default:
-          // This will not modify the state
-          return
-      }
-    }
-  }
+    modify: modifyReducer
 })
 ```
 
 And use it in the `Todos` component:
 
-```jsx filename="components/Todos.jsx"
+```jsx filename="components/Todos.jsx" {17-23, 30-33}
 import { useAtom } from 'atomic-state'
 
 import { todosState } from '@/states'
@@ -189,11 +194,24 @@ export default function Todos() {
               onClick={() => {
                 const willRemoveTodo = confirm('Delete this todo?')
                 if (willRemoveTodo) {
-                  todosActions.removeTodo(todo)
+                  todosActions.modify({
+                    type: 'REMOVE',
+                    id: todo.id
+                  })
                 }
               }}
             >
               Remove
+            </button>
+            <button
+              onClick={() => {
+                todosActions.modify({
+                  type: 'TOGGLE',
+                  id: todo.id
+                })
+              }}
+            >
+              {todo.completed ? 'Done' : 'Mark as done'}
             </button>
           </div>
         </div>
