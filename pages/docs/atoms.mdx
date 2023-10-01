@@ -2,14 +2,14 @@ import { Callout } from 'nextra-theme-docs'
 
 # Atoms
 
-Atoms are pieces of state that can be read and written to from any component or hook. In the most basic way, they can be used the same way you would use `useState`:
+Atoms are pieces of state that can be read and written to from any component or hook. In simple cases, they can be used the same way you would use `useState`:
 
 ```jsx
 import { atom, useAtom } from 'atomic-state'
 
 // The store
 const textState = atom({
-  name: 'text',
+  key: 'text',
   default: ''
 })
 
@@ -31,38 +31,40 @@ export default function App() {
 }
 ```
 
-Let's create a todo app!
+As an example, let's create a todo app
 
 ## Todo App
 
 For our app to be complete, we need the following:
 
-- Add todos
-- Toggle a todo's `completed` state
+- A way to add todos
+- Change the `completed` status of a todo
 - Remove todos
 - Get the list of completed todos
 
-First, create an atom that will store the todos:
+### Creating the app
 
-```jsx filename="states/index.js"
+First, create an atom that will contain the todos:
+
+```jsx filename="@/states/index.js" copy
 import { atom } from 'atomic-state'
 
 export const todosState = atom({
-  name: 'todos',
+  key: 'todos',
   default: []
 })
 ```
 
-Create a component that adds new todos to the list:
+Next, create a component that adds new todos to our todo list:
 
-```jsx filename="components/TodoForm.jsx"
+```jsx filename="@/components/TodoForm.jsx" copy
 import { useState } from 'react'
 import { useAtom } from 'atomic-state'
 
 import { todosState } from '@/states'
 
 export default function TodoForm() {
-  // Using todosState
+  // Using the todosState
   const [todos, setTodos] = useAtom(todosState)
 
   const [newTodo, setNewTodo] = useState('')
@@ -89,9 +91,9 @@ export default function TodoForm() {
 }
 ```
 
-Create a component to show the todos:
+Next, create a component to show the todos:
 
-```jsx filename="components/Todos.jsx" {1, 6}
+```jsx filename="@/components/Todos.jsx" {1, 6} copy
 import { useValue } from 'atomic-state'
 
 import { todosState } from '@/states'
@@ -118,7 +120,7 @@ export default function Todos() {
 
 Render both components:
 
-```jsx filename="src/App.jsx"
+```jsx filename="src/App.jsx" copy
 import { AtomicState } from 'atomic-state'
 
 import TodoForm from '@/components/TodoForm'
@@ -136,46 +138,57 @@ export default function App() {
 }
 ```
 
-So far it works, but there should be a way to remove todos or toggle the `completed` state. Add this action to the `todosState` atom:
+So far it works, but there should be a way to remove todos or toggle their `completed` status.
 
-```jsx
-function modifyReducer({ args, dispatch }) {
+To do that, add this `action` to the `todosState` atom:
+
+```jsx copy
+function modifyTodoAction({ args, dispatch }) {
   const { id, type } = args
-  switch (type) {
-    case 'REMOVE':
-      dispatch((todos) => todos.filter((todo) => todo.id !== id))
-      break
-    case 'TOGGLE':
-      dispatch((todos) =>
-        todos.map((todo) => {
-          if (todo.id === id) {
-            return {
-              ...todo,
-              completed: !todo.completed
-            }
+
+  const todoActions = {
+    REMOVE: (todos) => todos.filter((todo) => todo.id !== id),
+    TOGGLE: (todos) =>
+      todos.map((todo) => {
+        if (todo.id === id) {
+          return {
+            ...todo,
+            completed: !todo.completed
           }
-          return todo
-        })
-      )
-      break
+        }
+        return todo
+      })
   }
+
+  if (type in todoActions) todoActions(type)
 }
 ```
 
-```jsx filename="states/index.js" {7}
+<Callout type='info'>
+  You don't need to return anything from actions. The state can be set using
+  `dispatch`
+</Callout>
+
+```jsx filename="states/index.js" {7} copy
 import { atom } from 'atomic-state'
 
 export const todosState = atom({
-  name: 'todos',
+  key: 'todos',
   default: [],
   actions: {
-    modify: modifyReducer
+    modify: modifyTodoAction
+  }
 })
 ```
 
+<Callout type='info'>
+  For better static typing, add the action directly in `actions`, since all the
+  necessary typing is inferred, include the state type
+</Callout>
+
 And use it in the `Todos` component:
 
-```jsx filename="components/Todos.jsx" {17-23, 30-33}
+```jsx filename="components/Todos.jsx" {17-23, 30-33} copy
 import { useAtom } from 'atomic-state'
 
 import { todosState } from '@/states'

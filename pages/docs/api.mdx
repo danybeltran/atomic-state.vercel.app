@@ -4,23 +4,34 @@ import { Callout } from 'nextra-theme-docs'
 
 ## atom
 
-- **`name`**: The name of the store. This should be unique.
+- **`key`** (`string`): The key of the store. This should be unique because it will be used to keep track of each atom's state.
 
-- **`default`**: The default value of the store.
+- **`default`** (`any`): The default value of the store.
 
-- **`persist`**: A boolean. If `true`, any writes to this atom will be saved in the `persistenceProvider` passed.
+- **`persist`** (`boolean`): If `true`, any writes to this atom will be saved in the `persistenceProvider` passed.
 
-- **`persistenceProvider`**: The persistence mechanism to save atom's values. This should have the following shape:
+- **`persistenceProvider`** (`PersistenceStoreType`): The persistence mechanism to save atom's values. This should have the following shape:
 
 ```ts
 type PersistenceStoreType = {
-  getItem: (key: string) => any
-  setItem: (key: string, value: any) => void
-  removeItem: (key: string) => void
+  get?: (key: string) => any
+  getItem?: (key: string) => any
+  getItemAsync?: (key: string) => any
+
+  set?: (key: string, value: any) => void
+  setItem?: (key: string, value: any) => void
+  setItemAsync?: (key: string, value: any) => void
+
+  remove?: (key: string) => void
+  removeItem?: (key: string) => void
+  removeItemAsync?: (key: string) => void
+  delete?: (key: string) => void
+  deleteItem?: (key: string) => void
+  deleteItemAsync?: (key: string) => void
 }
 ```
 
-Persistence providers supported by default: `localStorage` (default), `sessionStorage`, `AsyncStorage` (React Native).
+Persistence providers supported by default: `localStorage` (default), `sessionStorage`, `AsyncStorage` and `expo-secure-store` (React Native), `js-cookie`.
 
 Example with `AsyncStorage`:
 
@@ -30,7 +41,7 @@ import { atom } from 'atomic-state'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const countState = atom({
-  name: 'count',
+  key: 'count',
   default: 0,
   persist: true,
   persistenceProvider: AsyncStorage
@@ -39,21 +50,24 @@ const countState = atom({
 
 <Callout type='info'>
   Checkout this [React Native starter
-  template](https://github.com/atomic-state/reactnative-starter) that uses `atomic-state`
-  [`expo-secure-store`](https://docs.expo.dev/versions/latest/sdk/securestore/) as persistence provider
+  template](https://github.com/atomic-state/reactnative-starter) that uses
+  `atomic-state`
+  [`expo-secure-store`](https://docs.expo.dev/versions/latest/sdk/securestore/)
+  as persistence provider
 </Callout>
 
-- **`actions`**: An object containing the state's reducers. Internally, they have access to the latest state value and function to update it. They can also read other atoms' and filters' states:
+- **`actions`**: An object containing the state's actions. Internally, they have access to the latest state value and function to update it. They can also read other atoms' and selectors' states:
 
 ```jsx
 import { atom, useValue, useActions } from 'atomic-state'
 
 const textState = atom({
-  name: 'text'
+  key: 'text',
+  default: ''
 })
 
 const countState = atom({
-  name: 'count',
+  key: 'count',
   default: 0,
   actions: {
     change({ args, state, dispatch, get }) {
@@ -103,8 +117,8 @@ In this example, updates are commited **only** when the new value is lower than 
 import { atom } from 'atomic-state'
 
 const countState = atom({
-  name: 'count',
-  default: [],
+  key: 'count',
+  default: 0,
   effects: [
     ({ state, previous }) => {
       return state < 9
@@ -125,8 +139,8 @@ Effects can also return cleanup functions:
 import { atom } from 'atomic-state'
 
 const countState = atom({
-  name: 'count',
-  default: [],
+  key: 'count',
+  default: 0,
   effects: [
     ({ state, previous }) => {
       console.log('Subscribing')
@@ -138,14 +152,14 @@ const countState = atom({
 })
 ```
 
-State updates can also be prevented in effects that use `async`, using the `cancel` function:
+State updates can also be prevented in effects that are marked as `async` by using the `cancel` function:
 
 ```jsx
 import { atom } from 'atomic-state'
 
 const countState = atom({
-  name: 'count',
-  default: [],
+  key: 'count',
+  default: 0,
   effects: [
     async ({ state, cancel }) => {
       if (state > 9) cancel()
@@ -154,44 +168,23 @@ const countState = atom({
 })
 ```
 
-You can also set state from effects using the `dispatch` function:
+## Selectors
+
+Selectors are a way to create derived states.
+
+- `key`: The key of the filter. This should be unique
+- `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default value with asynchronus code, like a network request.
 
 ```jsx
 import { atom } from 'atomic-state'
 
-const countState = atom({
-  name: 'count',
-  default: [],
-  effects: [
-    ({ state, dispatch }) => {
-      if (state > 9) {
-        dispatch(0)
-        return false
-      }
-    }
-  ]
-})
-```
-
-<Callout>Be careful! Using `dispatch` wrong can create an infinte loop</Callout>
-
-## filter
-
-Filters provide a way to create derived states.
-
-- `name`: The name of the filter. This should be unique
-- `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default value with asynchronus code, like a network request.
-
-```jsx
-import { atom, filter } from 'atomic-state'
-
 const textState = atom({
-  name: 'textState',
+  key: 'textState',
   default: ''
 })
 
-const resultsState = filter({
-  name: 'results',
+const resultsState = atom({
+  key: 'results',
   default: [],
   get({ get }) {
     const text = get(textState)
@@ -203,25 +196,24 @@ const resultsState = filter({
 
 ## Snapshots
 
-You can take snapshots that include information about all the atoms and filters:
+You can take snapshots that include information about all the atoms and selectors:
 
 ```jsx {6}
 import {
+  AtomicState,
   atom,
-  filter,
   useAtom,
-  useFilter,
-  takeSnapshot,
-  AtomicState
+  useValue,
+  takeSnapshot
 } from 'atomic-state'
 
 const countState = atom({
-  name: 'count',
+  key: 'count',
   default: 0
 })
 
-const doubleState = filter({
-  name: 'double',
+const doubleState = atom({
+  key: 'double',
   get({ get }) {
     const count = get(countState)
     return count * 2
@@ -235,8 +227,8 @@ function Counter() {
 }
 
 function Double() {
-  const double = useFilter(doubleState)
-  return <p></p>
+  const double = useValue(doubleState)
+  return <p>{double}</p>
 }
 
 export default function App() {
@@ -285,6 +277,8 @@ If you click the `Take snapshot` button, you will see something like this (consi
 }
 ```
 
+<Callout type='info'>`filters` refers to selectors</Callout>
+
 You may notice that a `prefix` prop was added to `AtomicState`. This creates two different state providers that are independent from each other. It is possible to have different providers:
 
 ```jsx
@@ -314,7 +308,7 @@ export default function App() {
 If you want to take a snapshot of only one provider, pass the `prefix` as the first argument:
 
 ```jsx
-takeSnapshot('store') // 'store' is the default provider's name
+takeSnapshot('store')
 ```
 
 For the example above, it would be:

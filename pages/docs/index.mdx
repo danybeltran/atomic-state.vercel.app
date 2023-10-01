@@ -18,14 +18,14 @@ npm install --save atomic-state
 
 ### Quick start
 
-**Basic example**: Counter app
+**Example**: A simple counter app
 
 ```jsx
 import { atom, useAtom } from 'atomic-state'
 
 const countState = atom({
-  name: 'count',
-  default: 0
+  key: 'count',
+  default: 0 // initial value
 })
 
 function Counter() {
@@ -34,7 +34,13 @@ function Counter() {
   return (
     <div>
       <h2>Count: {count}</h2>
-      <button onClick={() => setCount((c) => c + 1)}>Increase</button>
+      <button
+        onClick={() => {
+          setCount(count + 1)
+        }}
+      >
+        Increase
+      </button>
     </div>
   )
 }
@@ -49,4 +55,17 @@ export default function App() {
 }
 ```
 
-In this example, an `atom` is created to be used as a store. Any writes to it will trigger a re-render in other subscribers.
+### Suggestions
+
+When creating an atom, it's a good idea to indicate it will contain some state by adding `State` after its friendly name. However, you are free to use any convention you want
+
+In the example above, the `count` state is stored in the `countState` atom:
+
+```jsx
+import { atom } from 'atomic-state'
+
+const countState = atom({
+  key: 'count',
+  default: 0
+})
+```

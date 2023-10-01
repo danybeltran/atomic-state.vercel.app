@@ -1,0 +1,89 @@
+import { Callout } from 'nextra-theme-docs'
+
+# Selectors
+
+Selectors provide a way to create derived states. They can be created with the same `atom` function. There is one difference: selectors should have a `get` method that will run whenever any of the states they are subscribed to changes.
+
+```jsx copy
+import { atom, useAtom, useValue } from 'atomic-state'
+
+const todosState = atom({
+  key: 'todos',
+  default: []
+})
+
+const completedTodosState = atom({
+  key: 'completedTodos',
+  get({ get }) {
+    // This selector will re-render only when 'todosState' changes.
+    // You can check that by adding a console.log :)
+
+    const todos = get(todosState)
+
+    return todos.filter((todo) => todo.completed)
+  }
+})
+
+function CompletedTodos() {
+  // Type is inferred here
+  const completedTodos = useValue(completedTodosState)
+
+  return <p>Completed todos: {todos.length}</p>
+}
+```
+
+<Callout>
+  Because selectors depend on other atoms' states, their state cannot be set
+  manually. This also means that `actions` don't work inside them
+</Callout>
+
+They can also return promises:
+
+```jsx filename="@/states/index.jsx" copy
+import { atom } from 'atomic-state'
+
+const textState = atom({
+  key: 'text',
+  default: ''
+})
+
+const searchResultsState = atom({
+  key: 'searchResults',
+  default: [],
+  async get({ get }) {
+    const text = get(textState)
+
+    return fetch('/search?q=' + text).then((res) => res.json())
+  }
+})
+```
+
+<Callout>
+  Note that in this case the result of the selector is a promise, so it will not
+  be available while it's resolving. In that case, `default` is required. The
+  return type will be inferred from it as well.
+</Callout>
+
+They can also subscribe to other selectors:
+
+```jsx copy
+import { atom } from 'atomic-state'
+
+import { searchResultsState } from '@/states'
+
+const infoState = atom({
+  key: 'info',
+  default: {
+    name: '',
+    searchResults: []
+  },
+  async get({ get }) {
+    const searchResults = await get(searchResultsState)
+
+    return {
+      name: '',
+      searchResults
+    }
+  }
+})
+```
