@@ -4,6 +4,12 @@ import { Callout } from 'nextra-theme-docs'
 
 Selectors provide a way to create derived states. They can be created with the same `atom` function. There is one difference: selectors should have a `get` method that will run whenever any of the states they are subscribed to changes.
 
+## Advantages
+
+- Selectors are re-rendered **only** when any of the atom's they are subscribed to updates their state.
+- They can return promises
+- They are re-calculated even when they are not rendered in a component or hook (note that you will need to render them using the `useValue` or `useAtom` hook if you want them to run the most up-to-date `get` function). This ensures they have the most up-to-date calculated value before they are rendered. This also makes them a good solution for background syncing, because they can get other atom's values without subscribing to their updates by using the `getValue` function
+
 ```jsx copy
 import { atom, useAtom, useValue } from 'atomic-state'
 
@@ -59,9 +65,9 @@ const searchResultsState = atom({
 ```
 
 <Callout>
-  Note that in this case the result of the selector is a promise, so it will not
-  be available while it's resolving. In that case, `default` is required. The
-  return type will be inferred from it as well.
+  Note that in this case the result of the selector is a `Promise`, so it will
+  not be available while it's resolving. In that case, `default` is required.
+  The return type will be inferred from it as well.
 </Callout>
 
 They can also subscribe to other selectors:
@@ -87,3 +93,8 @@ const infoState = atom({
   }
 })
 ```
+
+<Callout type='info'>
+  In this example, we are using `async/await` because the current state of
+  `searchResultsState` could still be a `Promise`
+</Callout>

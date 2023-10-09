@@ -160,7 +160,7 @@ function modifyTodoAction({ args, dispatch }) {
       })
   }
 
-  if (type in todoActions) todoActions(type)
+  if (type in todoActions) setTodos(todoActions[type])
 }
 ```
 
@@ -183,7 +183,7 @@ export const todosState = atom({
 
 <Callout type='info'>
   For better static typing, add the action directly in `actions`, since all the
-  necessary typing is inferred, include the state type
+  necessary typing is inferred, included the state type
 </Callout>
 
 And use it in the `Todos` component:
