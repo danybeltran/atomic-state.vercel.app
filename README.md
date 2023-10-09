@@ -3,6 +3,7 @@
 Atomic State is a state management library for React.
 
 
+
 ### Overview
 
 Atomic State works very similarly to `useState`, while providing features that make state management easier.
@@ -14,8 +15,8 @@ Atomic State works very similarly to `useState`, while providing features that m
 - Server-Side Rendering
 - React Native
 - Effects
-- Reducers
-- Selectors (filters)
+- Actions
+- Selectors (derived states)
 - Persistence
 
 and [more](https://atomic-state.netlify.app/docs/api)!

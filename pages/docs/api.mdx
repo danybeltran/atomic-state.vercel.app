@@ -174,6 +174,7 @@ Selectors are a way to create derived states.
 
 - `key`: The key of the filter. This should be unique
 - `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default value with asynchronus code, like a network request.
+- `get`: The action that will return the derived state. It's also used to subscribe the selector to state changes in other atoms
 
 ```jsx
 import { atom } from 'atomic-state'
@@ -183,6 +184,7 @@ const textState = atom({
   default: ''
 })
 
+// The selector
 const resultsState = atom({
   key: 'results',
   default: [],
@@ -245,7 +247,7 @@ export default function App() {
         <Counter />
         <Double />
       </AtomicState>
-      <AtomicState prefix='another-provider'>
+      <AtomicState storeName='another-provider'>
         <Counter />
         <Double />
       </AtomicState>
@@ -256,30 +258,20 @@ export default function App() {
 
 If you click the `Take snapshot` button, you will see something like this (considering `count` has not changed):
 
-```jsx
-{
-    "store": {
-        "filters": {
-            "double": 0
-        },
-        "atoms": {
-            "count": 0
-        }
-    },
-    "another-provider": {
-        "filters": {
-            "double": 0
-        },
-        "atoms": {
-            "count": 0
-        }
-    }
+```tsx
+const mySnapshot = {
+  default: {
+    double: 0,
+    count: 0
+  },
+  'another-provider': {
+    double: 0,
+    count: 0
+  }
 }
 ```
 
-<Callout type='info'>`filters` refers to selectors</Callout>
-
-You may notice that a `prefix` prop was added to `AtomicState`. This creates two different state providers that are independent from each other. It is possible to have different providers:
+You may notice that a `storeName` prop was added to `AtomicState`. This creates two different state providers that are independent from each other. It is possible to have different providers:
 
 ```jsx
 export default function App() {
@@ -292,11 +284,11 @@ export default function App() {
       ></button>
       <AtomicState>
         <Counter />
-        <AtomicState prefix='another-provider'>
+        <AtomicState storeName='another-provider'>
           <Double />
         </AtomicState>
       </AtomicState>
-      <AtomicState prefix='another-provider'>
+      <AtomicState storeName='another-provider'>
         <Counter />
         <Double />
       </AtomicState>
@@ -305,7 +297,7 @@ export default function App() {
 }
 ```
 
-If you want to take a snapshot of only one provider, pass the `prefix` as the first argument:
+If you want to take a snapshot of only one provider, pass the `storeName` as the first argument:
 
 ```jsx
 takeSnapshot('store')
@@ -321,14 +313,9 @@ And you should see something like this:
 
 ```jsx
 {
-    "filters": {
-        "double": 0
-    },
-    "atoms": {
-        "count": 0
-    }
+  double: 0,
+  count: 0
 }
-
 ```
 
 # AtomicState
@@ -344,7 +331,7 @@ export default function App({ children }) {
   return (
     <main>
       <AtomicState
-        atoms={{
+        default={{
           count: 0
         }}
       >
