@@ -8,7 +8,7 @@ Selectors provide a way to create derived states. They can be created with the s
 
 - Selectors are re-rendered **only** when any of the atom's they are subscribed to updates their state.
 - They can return promises
-- They are re-calculated even when they are not rendered in a component or hook. This ensures they have the most up-to-date calculated value before they are even rendered. This also makes them the perfect solution for background syncing, because they can get other atom's values without subscribing to their updates by using the `getValue` function
+- They are re-calculated even when they are not rendered in a component or hook (note that you will need to render them using the `useValue` or `useAtom` hook if you want them to run the most up-to-date `get` function). This ensures they have the most up-to-date calculated value before they are rendered. This also makes them a good solution for background syncing, because they can get other atom's values without subscribing to their updates by using the `getValue` function
 
 ```jsx copy
 import { atom, useAtom, useValue } from 'atomic-state'
