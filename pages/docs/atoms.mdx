@@ -16,7 +16,7 @@ const textState = atom({
 export default function App() {
   const [text, setText] = useAtom(textState)
 
-  // Reading from and writing to that store
+  // Reading from and writing to the atom
   return (
     <div>
       <h2>Text: {text}</h2>
@@ -31,11 +31,11 @@ export default function App() {
 }
 ```
 
-As an example, let's create a todo app
+Let's create a basic todo app
 
 ## Todo App
 
-For our app to be complete, we need the following:
+For the todo app to be complete, it needs these basic features:
 
 - A way to add todos
 - Change the `completed` status of a todo
