@@ -1,8 +1,20 @@
-# Atomic State
+<h1>
+<p align="center">Atomic State</p>
+</h1>
 
-Atomic State is a state management library for React.
+<p align="center">
+<img src="./public/raku.jpeg" height="350px" width="350px" />
+</p>
 
+<p align="center">
+ <img alt="CodeQL" src="https://github.com/atomic-state/atomic-state/actions/workflows/codeql-analysis.yml/badge.svg">
+<img src="https://github.com/github/docs/actions/workflows/test.yml/badge.svg?event=push" />
+<img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+<img src="https://img.shields.io/npm/v/atomic-state.svg?style=flat"/>
+<img src="https://img.shields.io/github/stars/atomic-state/atomic-state.svg?style=social&label=Star" alt="Github Stars"/>
+</p>
 
+<p align="center">Atomic State is a state management library for React</p>
 
 ### Overview
 
@@ -19,24 +31,18 @@ Atomic State works very similarly to `useState`, while providing features that m
 - Selectors (derived states)
 - Persistence
 
-and [more](https://atomic-state.netlify.app/docs/api)!
+and [more](https://atomic-state.vercel.app/docs/api)!
 
-#### Installation:
+Getting started:
 
-```bash
+```
 npm install --save atomic-state
 ```
 
-Or
+Or with yarn:
 
-```bash
+```
 yarn add atomic-state
 ```
 
-[Getting started](https://atomic-state.netlify.app/docs)
-
-
-<p align="center">
-<a href="https://www.npmjs.com/package/atomic-state" target="_blank"><img src="https://badge.fury.io/js/atomic-state.svg"></a> <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
-<img src="https://github.com/atomic-state/atomic-state/actions/workflows/test.yml/badge.svg?event=push" />
-</p>
+[Getting started](https://atomic-state.vercel.app/docs)

@@ -10,7 +10,7 @@ const config: DocsThemeConfig = {
     link: 'https://discord.com'
   },
   docsRepositoryBase:
-    'https://github.com/atomic-state/atomic-state.netlify.app/tree/main',
+    'https://github.com/danybeltran/atomic-state.vercel.app/tree/main',
   useNextSeoProps() {
     return {
       titleTemplate: '%s – Atomic State',

@@ -1,5 +1,5 @@
 {
-  "name": "atomic-state.netlify.com",
+  "name": "atomic-state.vercel.com",
   "version": "0.0.1",
   "description": "Atomic State is a state management library for React",
   "scripts": {
