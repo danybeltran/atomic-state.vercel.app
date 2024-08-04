@@ -20,16 +20,26 @@ npm install --save atomic-state
 
 **Example**: A simple counter app
 
-```jsx
-import { atom, useAtom } from 'atomic-state'
+```jsx filename="states.ts"
+import { create } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0 // initial value
 })
 
+// export only what's needed
+export const useCount = count.value
+export const setCount = count.set
+```
+
+```jsx filename="app.tsx" copy
+import { AtomicState } from 'atomic-state'
+
+import { useCount, setCount } from '@/states'
+
 function Counter() {
-  const [count, setCount] = useAtom(countState)
+  const count = useCount()
 
   return (
     <div>
@@ -46,8 +56,8 @@ function Counter() {
 }
 
 export default function App() {
+  // Remember to wrap with the AtomicState root
   return (
-    // The AtomicState root
     <AtomicState>
       <Counter />
     </AtomicState>
@@ -59,15 +69,40 @@ export default function App() {
 
 When creating an atom, it's a good idea to indicate it will contain some state by adding `State` after its friendly name. However, you are free to use any convention you want
 
-In the example above, the `count` state is stored in the `countState` atom:
+In the example above, the `count` state is stored in the `count` atom:
 
 ```jsx
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0
 })
+
+// export only what's needed
+export const useCount = count.value
+export const setCount = count.set
+```
+
+You can rename it `useCount` and use it directly
+
+```jsx
+import { create } from 'atomic-state'
+
+export const useCount = create({
+  key: 'count',
+  default: 0
+})
+```
+
+```tsx filename="app.tsx"
+import { useCount } from '@/states'
+
+export default function App() {
+  const [count, setCount] = useCount()
+
+  // etc
+}
 ```
 
 <Callout>

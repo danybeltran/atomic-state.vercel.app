@@ -2,7 +2,7 @@ import { Callout } from 'nextra-theme-docs'
 
 # API
 
-## atom
+## create
 
 - **`key`** (`string`): The key of the store. This should be unique because it will be used to keep track of each atom's state.
 
@@ -36,22 +36,24 @@ Persistence providers supported by default: `localStorage` (default), `sessionSt
 Example with `AsyncStorage`:
 
 ```jsx {3,9}
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0,
   persist: true,
   persistenceProvider: AsyncStorage
 })
+
+export const useCount = count.value
+export const setCount = count.set
 ```
 
 <Callout type='info'>
   Check this [React Native starter
   template](https://github.com/atomic-state/reactnative-starter) that uses
-  `atomic-state`
   [`expo-secure-store`](https://docs.expo.dev/versions/latest/sdk/securestore/)
   as persistence provider
 </Callout>
@@ -59,45 +61,45 @@ const countState = atom({
 - **`actions`**: An object containing the state's actions. Internally, they have access to the latest state value and function to update it. They can also read other atoms' and selectors' states:
 
 ```jsx
-import { atom, useValue, useActions } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const textState = atom({
+const text = create({
   key: 'text',
   default: ''
 })
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0,
   actions: {
-    change({ args, state, dispatch, get }) {
-      // The latest textState value
+    change({ args, get, dispatch }) {
+      // The latest text value
       const text = get(textState)
 
       switch (args.type) {
         case '+':
-          dispatch(state + 1)
+          dispatch((count) => count + 1)
           break
         case '-':
-          dispatch(state - 1)
+          dispatch((count) => count - 1)
           break
       }
     }
   }
 })
 
-export default function App() {
-  const count = useValue(countState)
+const useCount = count.value
+const countActions = count.actions
 
-  // The useActions hook returns only the actions of the atom
-  const actions = useActions(countState)
+export default function App() {
+  const count = useCount()
 
   return (
     <div>
       <p>{count}</p>
       <section>
-        <button onClick={() => actions.change({ type: '+' })}>++</button>
-        <button onClick={() => actions.change({ type: '-' })}>--</button>
+        <button onClick={() => countActions.change({ type: '+' })}>++</button>
+        <button onClick={() => countActions.change({ type: '-' })}>--</button>
       </section>
     </div>
   )
@@ -114,35 +116,38 @@ export default function App() {
 In this example, updates are commited **only** when the new value is lower than 9:
 
 ```jsx
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0,
   effects: [
-    ({ state, previous }) => {
+    ({ state }) => {
       return state < 9
     }
   ]
 })
+
+export const useCount = count.value
+export const setCount = count.set
 ```
 
 <Callout type='info'>
   If any effect returns `false`, the state update will be prevented. This will
-  also prevent any re-renders that would have happened as the result of a state
-  update.
+  also prevent any re-renders that would have happened as the result of the
+  state update.
 </Callout>
 
 Effects can also return cleanup functions:
 
 ```jsx
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0,
   effects: [
-    ({ state, previous }) => {
+    ({ state }) => {
       console.log('Subscribing')
       return () => {
         console.log('Unsubscribing')
@@ -150,14 +155,17 @@ const countState = atom({
     }
   ]
 })
+
+export const useCount = count.value
+export const setCount = count.set
 ```
 
 State updates can also be prevented in effects that are marked as `async` by using the `cancel` function:
 
 ```jsx
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0,
   effects: [
@@ -166,6 +174,9 @@ const countState = atom({
     }
   ]
 })
+
+export const useCount = count.value
+export const setCount = count.set
 ```
 
 ## Selectors
@@ -173,64 +184,66 @@ const countState = atom({
 Selectors are a way to create derived states.
 
 - `key`: The key of the filter. This should be unique
-- `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default value with asynchronus code, like a network request.
+- `default`: The default value of the filter. This is not necesary for synchronus operations, like filtering an array state. It's recommended that you set a default when the seector's `get` function returns a promise, e.g. a network request.
 - `get`: The action that will return the derived state. It's also used to subscribe the selector to state changes in other atoms
 
 ```jsx
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const textState = atom({
+const text = create({
   key: 'textState',
   default: ''
 })
 
 // The selector
-const resultsState = atom({
+const results = create({
   key: 'results',
   default: [],
   get({ get }) {
-    const text = get(textState)
+    const textValue = get(text)
 
-    return fetch('/search?q=' + text).then((res) => res.json())
+    return fetch('/search?q=' + textValue).then((res) => res.json())
   }
 })
+
+export const useText = text.value
+export const setText = text.set
+export const useResults = results.value
 ```
 
 ## Snapshots
 
 You can take snapshots that include information about all the atoms and selectors:
 
-```jsx {6}
-import {
-  AtomicState,
-  atom,
-  useAtom,
-  useValue,
-  takeSnapshot
-} from 'atomic-state'
+```jsx
+import { AtomicState, create, takeSnapshot } from 'atomic-state'
 
-const countState = atom({
+const count = create({
   key: 'count',
   default: 0
 })
 
-const doubleState = atom({
+const double = create({
   key: 'double',
   get({ get }) {
-    const count = get(countState)
-    return count * 2
+    const countValue = get(count)
+    return countValue * 2
   }
 })
 
+const useCount = count.value
+const setCount = count.set
+const useDouble = double.value
+
 function Counter() {
-  const [count, setCount] = useAtom(countState)
+  const count = useCount()
 
   return <button onClick={() => setCount((c) => c + 1)}>{count}</button>
 }
 
 function Double() {
-  const double = useValue(doubleState)
-  return <p>{double}</p>
+  const doubleValue = useDouble()
+  return <p>{doubleValue}</p>
 }
 
 export default function App() {
@@ -259,15 +272,9 @@ export default function App() {
 If you click the `Take snapshot` button, you will see something like this (considering `count` has not changed):
 
 ```tsx
-const mySnapshot = {
-  default: {
-    double: 0,
-    count: 0
-  },
-  'another-provider': {
-    double: 0,
-    count: 0
-  }
+ {
+  count: 0,
+  double: 0
 }
 ```
 
@@ -284,7 +291,7 @@ export default function App() {
       ></button>
       <AtomicState>
         <Counter />
-        <AtomicState storeName='another-provider'>
+        <AtomicState storeName='anotherProvider'>
           <Double />
         </AtomicState>
       </AtomicState>
@@ -299,22 +306,22 @@ export default function App() {
 
 If you want to take a snapshot of only one provider, pass the `storeName` as the first argument:
 
-```jsx
-takeSnapshot('store')
+```tsx
+declare function takeSnapshot(store: string): { [k: string]: any }
 ```
 
 For the example above, it would be:
 
 ```jsx
-takeSnapshot('another-provider')
+takeSnapshot('anotherProvider')
 ```
 
-And you should see something like this:
+And you should see this:
 
 ```jsx
 {
+  count: 0,
   double: 0,
-  count: 0
 }
 ```
 
@@ -322,22 +329,20 @@ And you should see something like this:
 
 The Atomic State root component.
 
-- `atoms`: The default values for atoms. This is very useful with SSR:
+- `value`: The default values for atoms. Can be used for SSR:
 
 ```jsx
 import { AtomicState } from 'atomic-state'
 
 export default function App({ children }) {
   return (
-    <main>
-      <AtomicState
-        default={{
-          count: 0
-        }}
-      >
-        {children}
-      </AtomicState>
-    </main>
+    <AtomicState
+      value={{
+        count: 0
+      }}
+    >
+      <main>{children}</main>
+    </AtomicState>
   )
 }
 ```

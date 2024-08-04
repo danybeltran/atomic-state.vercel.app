@@ -9,6 +9,7 @@ export default function App({ Component, pageProps }) {
       code {
         font-family: ${GeistMono.style.fontFamily} !important;
         font-weight: ${GeistMono.style.fontWeight} !important;
+        font-variant-ligatures: none;
       }
       
       `}</style>

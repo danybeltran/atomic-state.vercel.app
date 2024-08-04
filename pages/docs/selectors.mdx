@@ -2,39 +2,40 @@ import { Callout } from 'nextra-theme-docs'
 
 # Selectors
 
-Selectors provide a way to create derived states. They can be created with the same `atom` function. There is one difference: selectors should have a `get` method that will run whenever any of the states they are subscribed to changes.
+Selectors provide a way to create derived states. They can be created with the same `atom` | `create` function. There is one difference: selectors should have a `get` method that will run whenever any of the states they are subscribed to changes.
 
 ## Advantages
 
 - Selectors are re-rendered **only** when any of the atom's they are subscribed to updates their state.
 - They can return promises
-- They are re-calculated even when they are not rendered in a component or hook (note that you will need to render them using the `useValue` or `useAtom` hook if you want them to run the most up-to-date `get` function). This ensures they have the most up-to-date calculated value before they are rendered. This also makes them a good solution for background syncing, because they can get other atom's values without subscribing to their updates by using the `getValue` function
 
 ```jsx copy
-import { atom, useAtom, useValue } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const todosState = atom({
+const todos = create({
   key: 'todos',
   default: []
 })
 
-const completedTodosState = atom({
+const completedTodosState = create({
   key: 'completedTodos',
   get({ get }) {
-    // This selector will re-render only when 'todosState' changes.
+    // This selector will re-render only when 'todos' changes.
     // You can check that by adding a console.log :)
 
-    const todos = get(todosState)
+    const todosState = get(todos)
 
-    return todos.filter((todo) => todo.completed)
+    return todosState.filter((todo) => todo.completed)
   }
 })
 
+const useCompletedTodos = completedTodosState.value
+
 function CompletedTodos() {
   // Type is inferred here
-  const completedTodos = useValue(completedTodosState)
+  const completedTodos = useCompletedTodos()
 
-  return <p>Completed todos: {todos.length}</p>
+  return <p>Completed todos: {completedTodos.length}</p>
 }
 ```
 
@@ -46,22 +47,24 @@ function CompletedTodos() {
 They can also return promises:
 
 ```jsx filename="@/states/index.jsx" copy
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-const textState = atom({
+const text = create({
   key: 'text',
   default: ''
 })
 
-const searchResultsState = atom({
+export const searchResults = create({
   key: 'searchResults',
   default: [],
   async get({ get }) {
-    const text = get(textState)
+    const textState = get(text)
 
-    return fetch('/search?q=' + text).then((res) => res.json())
+    return fetch('/search?q=' + textState).then((res) => res.json())
   }
 })
+
+export const useSearchResults = searchResults.value
 ```
 
 <Callout>
@@ -73,9 +76,9 @@ const searchResultsState = atom({
 They can also subscribe to other selectors:
 
 ```jsx copy
-import { atom } from 'atomic-state'
+import { create } from 'atomic-state'
 
-import { searchResultsState } from '@/states'
+import { searchResults } from '@/states'
 
 const infoState = atom({
   key: 'info',
@@ -84,7 +87,7 @@ const infoState = atom({
     searchResults: []
   },
   async get({ get }) {
-    const searchResults = await get(searchResultsState)
+    const searchResultsValue = await get(searchResults)
 
     return {
       name: '',
