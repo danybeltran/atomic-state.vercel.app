@@ -47,8 +47,8 @@ const count = create({
   persistenceProvider: AsyncStorage
 })
 
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 <Callout type='info'>
@@ -88,7 +88,7 @@ const count = create({
   }
 })
 
-const useCount = count.value
+const useCount = count.useValue
 const countActions = count.actions
 
 export default function App() {
@@ -128,8 +128,8 @@ const count = create({
   ]
 })
 
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 <Callout type='info'>
@@ -156,8 +156,8 @@ const count = create({
   ]
 })
 
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 State updates can also be prevented in effects that are marked as `async` by using the `cancel` function:
@@ -175,8 +175,8 @@ const count = create({
   ]
 })
 
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 ## Selectors
@@ -206,9 +206,9 @@ const results = create({
   }
 })
 
-export const useText = text.value
-export const setText = text.set
-export const useResults = results.value
+export const useText = text.useValue
+export const setText = text.setValue
+export const useResults = results.useValue
 ```
 
 ## Snapshots
@@ -231,9 +231,9 @@ const double = create({
   }
 })
 
-const useCount = count.value
-const setCount = count.set
-const useDouble = double.value
+const useCount = count.useValue
+const setCount = count.setValue
+const useDouble = double.useValue
 
 function Counter() {
   const count = useCount()

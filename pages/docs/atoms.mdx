@@ -53,8 +53,8 @@ const todos = create({
   default: []
 })
 
-export const useTodos = todos.value
-export const setTodos = todos.set
+export const useTodos = todos.useValue
+export const setTodos = todos.setValue
 ```
 
 Next, create a component that adds new todos to our todo list:
@@ -173,8 +173,8 @@ const todos = create({
   }
 })
 
-export const useTodos = todos.value
-export const setTodos = todos.set
+export const useTodos = todos.useValue
+export const setTodos = todos.setValue
 export const todosActions = todos.actions
 
 ```

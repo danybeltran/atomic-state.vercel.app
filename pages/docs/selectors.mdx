@@ -29,7 +29,7 @@ const completedTodosState = create({
   }
 })
 
-const useCompletedTodos = completedTodosState.value
+const useCompletedTodos = completedTodosState.useValue
 
 function CompletedTodos() {
   // Type is inferred here
@@ -64,7 +64,7 @@ export const searchResults = create({
   }
 })
 
-export const useSearchResults = searchResults.value
+export const useSearchResults = searchResults.useValue
 ```
 
 <Callout>

@@ -29,8 +29,8 @@ const count = create({
 })
 
 // export only what's needed
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 ```jsx filename="app.tsx" copy
@@ -80,8 +80,8 @@ const count = create({
 })
 
 // export only what's needed
-export const useCount = count.value
-export const setCount = count.set
+export const useCount = count.useValue
+export const setCount = count.setValue
 ```
 
 You can rename it `useCount` and use it directly
